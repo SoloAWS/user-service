@@ -6,6 +6,7 @@ from ..models.model import Company, save_user
 from sqlalchemy.orm import Session
 from ..session import get_db
 
+from uuid import UUID
 
 router = APIRouter(prefix="/company", tags=["Company"])
 
@@ -19,7 +20,7 @@ def create_company(company_schema: CompanyCreate, db: Session = Depends(get_db))
 
 @router.get("/{company_id}", response_model=CompanyResponse, status_code=200)
 def view_companies(
-    company_id: str = Path(..., description="Id of the offer", pattern="^[a-f\d]{8}(-[a-f\d]{4}){3}-[a-f\d]{12}$"),
+    company_id: UUID = Path(..., description="Id of the offer"),
     db: Session = Depends(get_db)
 ):
     company = db.query(Company).filter(Company.id == company_id).first()
