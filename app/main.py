@@ -4,12 +4,10 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 
 from .errors.errors import ApiError
-from .routers import user, company, manager
+from .routers import company
 
 app = FastAPI()
 app.include_router(company.router)
-app.include_router(user.router)
-app.include_router(manager.router)
 version = "1.0"
 
 @app.get("/health")

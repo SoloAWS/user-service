@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Header, Query, Path, HTTPException
 
-from ..schemas.user import CompanyCreate, CompanyUpdate, CompanyResponse
+from ..schemas.user import CompanyCreate, CompanyResponse
 from ..models.model import Company, save_user
 
 from sqlalchemy.orm import Session
@@ -26,13 +26,3 @@ def view_companies(
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
     return company
-
-@router.put("/{company_id}", response_model=CompanyResponse)
-def update_company(company_id: str, company: CompanyUpdate):
-    # Implement update logic
-    pass
-
-@router.delete("/{company_id}")
-def delete_company(company_id: str):
-    # Implement delete logic
-    pass
