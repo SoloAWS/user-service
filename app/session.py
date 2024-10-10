@@ -11,6 +11,9 @@ class SessionConfig():
         ...
 
     def url(self):
+        if "SQLALCHEMY_DATABASE_URL" in os.environ:
+            return os.environ["SQLALCHEMY_DATABASE_URL"]
+        
         db_user = os.environ['DB_USER']
         db_pass = os.environ['DB_PASSWORD']
         db_host = os.environ['DB_HOST']
