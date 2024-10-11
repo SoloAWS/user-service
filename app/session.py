@@ -1,19 +1,12 @@
 import os
-from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from .models.model import Base
-
-load_dotenv()
 
 class SessionConfig():
     def __init__(self):
         ...
 
     def url(self):
-        if "SQLALCHEMY_DATABASE_URL" in os.environ:
-            return os.environ["SQLALCHEMY_DATABASE_URL"]
-        
         db_user = os.environ['DB_USER']
         db_pass = os.environ['DB_PASSWORD']
         db_host = os.environ['DB_HOST']
@@ -23,7 +16,6 @@ class SessionConfig():
 
 session_config = SessionConfig()
 engine = create_engine(session_config.url())
-Base.metadata.create_all(bind=engine)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def get_db():

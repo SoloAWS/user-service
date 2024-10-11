@@ -9,7 +9,7 @@ import os
 
 router = APIRouter(prefix="/company", tags=["Company"])
 
-SECRET_KEY = os.environ['JWT_SECRET_KEY']
+SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'secret_key')
 ALGORITHM = "HS256"
 
 def get_current_user(token: str = Header(None)):
