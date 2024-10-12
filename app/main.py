@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, APIRouter
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 
@@ -11,10 +11,12 @@ from .models.model import Base
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
 app.include_router(company.router)
 version = "1.0"
 
-@app.get("/health")
+
+@app.get("/user/health")
 async def health():
     return {"status": "OK"}
 
