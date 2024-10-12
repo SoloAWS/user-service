@@ -22,7 +22,7 @@ def test_create_company(client, db_session):
         "city": "TestCity"
     }
 
-    response = client.post("/company/", json=company_data)
+    response = client.post("/user/company/", json=company_data)
     assert response.status_code == 201
     data = response.json()
     assert data["username"] == company_data["username"]
@@ -42,8 +42,8 @@ def test_create_company_duplicate_email(client, db_session):
         "city": "TestCity"
     }
 
-    client.post("/company/", json=company_data)
-    response = client.post("/company/", json=company_data)
+    client.post("/user/company/", json=company_data)
+    response = client.post("/user/company/", json=company_data)
     assert response.status_code == 400
     assert response.json()["detail"] == "Email already registered"
 
@@ -60,7 +60,7 @@ def test_view_company(client, db_session):
         "country": "TestCountry",
         "city": "TestCity"
     }
-    response = client.post("/company/", json=company_data)
+    response = client.post("/user/company/", json=company_data)
     company_id = response.json()["id"]
 
     # Create a JWT token for authentication
@@ -71,7 +71,7 @@ def test_view_company(client, db_session):
     token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
 
     # Test viewing the company
-    response = client.get(f"/company/{company_id}", headers={"token": token})
+    response = client.get(f"/user/company/{company_id}", headers={"token": token})
     assert response.status_code == 200
     data = response.json()
     assert data["username"] == company_data["username"]
@@ -79,7 +79,7 @@ def test_view_company(client, db_session):
 
 def test_view_company_unauthorized(client, db_session):
     company_id = str(uuid4())
-    response = client.get(f"/company/{company_id}")
+    response = client.get(f"/user/company/{company_id}")
     assert response.status_code == 401
     assert response.json()["detail"] == "Authentication required"
 
@@ -96,7 +96,7 @@ def test_view_company_wrong_user(client, db_session):
         "country": "TestCountry",
         "city": "TestCity"
     }
-    response = client.post("/company/", json=company_data)
+    response = client.post("/user/company/", json=company_data)
     company_id = response.json()["id"]
 
     # Create a JWT token for a different company
@@ -107,7 +107,7 @@ def test_view_company_wrong_user(client, db_session):
     token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
 
     # Test viewing the company with wrong user
-    response = client.get(f"/company/{company_id}", headers={"token": token})
+    response = client.get(f"/user/company/{company_id}", headers={"token": token})
     assert response.status_code == 403
     assert response.json()["detail"] == "Not authorized to view this company"
 
@@ -119,6 +119,6 @@ def test_view_nonexistent_company(client, db_session):
     }
     token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
 
-    response = client.get(f"/company/{nonexistent_id}", headers={"token": token})
+    response = client.get(f"/user/company/{nonexistent_id}", headers={"token": token})
     assert response.status_code == 404
     assert response.json()["detail"] == "Company not found"
