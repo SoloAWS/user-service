@@ -7,7 +7,7 @@ from uuid import UUID
 import jwt
 import os
 
-router = APIRouter(prefix="/company", tags=["Company"])
+router = APIRouter(prefix="/user/company", tags=["Company"])
 
 SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'secret_key')
 ALGORITHM = "HS256"
