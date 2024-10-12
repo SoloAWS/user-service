@@ -1,0 +1,42 @@
+name: Deploy Incident Management Service
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build the Docker image
+        run: |
+          IMAGE_TAG=${GITHUB_SHA::7}
+          docker build -t ${{ secrets.AWS_ECR_URI }}:${IMAGE_TAG} .
+
+      - name: Push the Docker image to Amazon ECR
+        run: |
+          IMAGE_TAG=${GITHUB_SHA::7}
+          docker tag ${{ secrets.AWS_ECR_URI }}:${IMAGE_TAG} ${{ secrets.AWS_ECR_URI }}:latest
+          docker push ${{ secrets.AWS_ECR_URI }}:latest
+
+      - name: Deploy to ECS
+        run: |
+          CLUSTER_NAME="CdkBackendStack-IncidentManagementCluster7F16C094-SNesgGTjrTAI"
+          SERVICE_NAME="CdkBackendStack-IncidentManagementService90420D4B-ZaugNcyuyOt8"
+          aws ecs update-service --cluster $CLUSTER_NAME --service $SERVICE_NAME --force-new-deployment
