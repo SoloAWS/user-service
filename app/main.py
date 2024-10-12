@@ -5,6 +5,10 @@ from fastapi.exceptions import RequestValidationError
 
 from .errors.errors import ApiError
 from .routers import company
+from .session import engine
+from .models.model import Base
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 app.include_router(company.router)

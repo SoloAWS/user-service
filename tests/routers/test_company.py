@@ -1,151 +1,124 @@
-import os
-import uuid
-import jwt
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from uuid import uuid4
+import jwt
+import os
 
-from app.main import app
-from app.session import get_db
-from app.models.model import Base
-from app.session import SessionConfig
+from app.models.model import Company
 
-# Modify the SessionConfig class to support an alternate URL
-class TestSessionConfig(SessionConfig):
-    def url(self):
-        return os.environ["SQLALCHEMY_DATABASE_URL"]
+SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'secret_key')
+ALGORITHM = "HS256"
 
-# Create the engine and session for testing
-session_config = TestSessionConfig()
-engine = create_engine(session_config.url(), connect_args={"check_same_thread": False})
-Base.metadata.create_all(bind=engine)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-def override_get_db():
-    try:
-        db = TestingSessionLocal()
-        yield db
-    finally:
-        db.close()
-
-app.dependency_overrides[get_db] = override_get_db
-client = TestClient(app)
-
-@pytest.fixture(scope="function", autouse=True)
-def setup_and_teardown_db():
-    Base.metadata.create_all(bind=engine)
-    yield
-    Base.metadata.drop_all(bind=engine)
-    if os.path.exists("./test.db"):
-        os.remove("./test.db")
-
-def test_create_company():
+def test_create_company(client, db_session):
     company_data = {
-        "username": "testcompany@example.com",
+        "username": "test@example.com",
         "password": "testpassword",
-        "first_name": "Test",
-        "last_name": "Company",
-        "name": "Test Company Inc.",
-        "greeting": "Welcome to Test Company",
-        "farewell": "Thank you for choosing Test Company",
-        "birth_date": "2000-01-01",
+        "first_name": "John",
+        "last_name": "Doe",
+        "name": "Test Company",
+        "birth_date": "1990-01-01",
         "phone_number": "1234567890",
-        "country": "Test Country",
-        "city": "Test City"
+        "country": "TestCountry",
+        "city": "TestCity"
     }
+
     response = client.post("/company/", json=company_data)
     assert response.status_code == 201
     data = response.json()
     assert data["username"] == company_data["username"]
+    assert data["name"] == company_data["name"]
     assert "id" in data
 
-def test_create_company_duplicate_email():
+def test_create_company_duplicate_email(client, db_session):
     company_data = {
         "username": "duplicate@example.com",
         "password": "testpassword",
-        "first_name": "Duplicate",
-        "last_name": "Company",
-        "name": "Duplicate Company Inc.",
-        "greeting": "Welcome to Duplicate Company",
-        "farewell": "Thank you for choosing Duplicate Company",
-        "birth_date": "2000-01-01",
+        "first_name": "John",
+        "last_name": "Doe",
+        "name": "Test Company",
+        "birth_date": "1990-01-01",
         "phone_number": "1234567890",
-        "country": "Test Country",
-        "city": "Test City"
+        "country": "TestCountry",
+        "city": "TestCity"
     }
-    # Create the first company
-    response = client.post("/company/", json=company_data)
-    assert response.status_code == 201
 
-    # Attempt to create the duplicate company
+    client.post("/company/", json=company_data)
     response = client.post("/company/", json=company_data)
     assert response.status_code == 400
     assert response.json()["detail"] == "Email already registered"
 
-def test_view_company():
+def test_view_company(client, db_session):
+    # Create a test company
     company_data = {
-        "username": "testcompany2@example.com",
+        "username": "view@example.com",
         "password": "testpassword",
-        "first_name": "Test",
-        "last_name": "Company",
-        "name": "Test Company Inc.",
-        "greeting": "Welcome to Test Company",
-        "farewell": "Thank you for choosing Test Company",
-        "birth_date": "2000-01-01",
+        "first_name": "Jane",
+        "last_name": "Doe",
+        "name": "View Company",
+        "birth_date": "1990-01-01",
         "phone_number": "1234567890",
-        "country": "Test Country",
-        "city": "Test City"
+        "country": "TestCountry",
+        "city": "TestCity"
     }
     response = client.post("/company/", json=company_data)
-    assert response.status_code == 201
-    company = response.json()
+    company_id = response.json()["id"]
 
-    token = create_jwt_token(user_type="company", sub=company['id'])
-    headers = {"Authorization": f"Bearer {token}"}
+    # Create a JWT token for authentication
+    token_data = {
+        "sub": company_id,
+        "user_type": "company"
+    }
+    token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
 
-    response = client.get(f"/company/{company['id']}", headers=headers)
+    # Test viewing the company
+    response = client.get(f"/company/{company_id}", headers={"token": token})
     assert response.status_code == 200
     data = response.json()
+    assert data["username"] == company_data["username"]
+    assert data["name"] == company_data["name"]
 
-    assert data["username"] == company['username']
-    assert data["id"] == str(company['id'])
-
-def test_view_nonexistent_company():
-    non_existent_id = uuid.uuid4()
-    token = create_jwt_token(user_type="manager", sub=non_existent_id)
-    headers = {"Authorization": f"Bearer {token}"}
-
-    response = client.get(f"/company/{non_existent_id}", headers=headers)
-    assert response.status_code == 404
-    assert response.json()["detail"] == "Company not found"
-
-def test_view_company_unauthorized():
-    company_data = {
-        "username": "testcompany3@example.com",
-        "password": "testpassword",
-        "first_name": "Test",
-        "last_name": "Company",
-        "name": "Test Company Inc.",
-        "greeting": "Welcome to Test Company",
-        "farewell": "Thank you for choosing Test Company",
-        "birth_date": "2000-01-01",
-        "phone_number": "1234567890",
-        "country": "Test Country",
-        "city": "Test City"
-    }
-    response = client.post("/company/", json=company_data)
-    assert response.status_code == 201
-    company = response.json()
-
-    # Test without token
-    response = client.get(f"/company/{company['id']}")
+def test_view_company_unauthorized(client, db_session):
+    company_id = str(uuid4())
+    response = client.get(f"/company/{company_id}")
     assert response.status_code == 401
     assert response.json()["detail"] == "Authentication required"
 
-    # Test with a token of a different user type
-    token = create_jwt_token(user_type="employee", sub=company['id'])
-    headers = {"Authorization": f"Bearer {token}"}
-    response = client.get(f"/company/{company['id']}", headers=headers)
+def test_view_company_wrong_user(client, db_session):
+    # Create a test company
+    company_data = {
+        "username": "wrong@example.com",
+        "password": "testpassword",
+        "first_name": "Wrong",
+        "last_name": "User",
+        "name": "Wrong Company",
+        "birth_date": "1990-01-01",
+        "phone_number": "1234567890",
+        "country": "TestCountry",
+        "city": "TestCity"
+    }
+    response = client.post("/company/", json=company_data)
+    company_id = response.json()["id"]
+
+    # Create a JWT token for a different company
+    token_data = {
+        "sub": str(uuid4()),
+        "user_type": "company"
+    }
+    token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
+
+    # Test viewing the company with wrong user
+    response = client.get(f"/company/{company_id}", headers={"token": token})
     assert response.status_code == 403
-    assert response.json()["detail"] == "Not authorized to view companies"
+    assert response.json()["detail"] == "Not authorized to view this company"
+
+def test_view_nonexistent_company(client, db_session):
+    nonexistent_id = str(uuid4())
+    token_data = {
+        "sub": nonexistent_id,
+        "user_type": "company"
+    }
+    token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
+
+    response = client.get(f"/company/{nonexistent_id}", headers={"token": token})
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Company not found"
