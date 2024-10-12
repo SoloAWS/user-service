@@ -18,7 +18,7 @@ version = "1.0"
 
 @app.get("/user/health")
 async def health():
-    return {"status": "OK"}
+    return {"status": "OK ya se desplego"}
 
 @app.exception_handler(ApiError)
 async def api_error_exception_handler(request: Request, exc: ApiError):
