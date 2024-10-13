@@ -1,4 +1,4 @@
-name: Deploy Incident Management Service
+name: Deploy User Service
 
 on:
   push:
@@ -37,6 +37,4 @@ jobs:
 
       - name: Deploy to ECS
         run: |
-          CLUSTER_NAME="ECSStack-ClusterEB0386A7-tclP291aq31D"
-          SERVICE_NAME="ECSStack-userService597C27F8-jP82Ti5MeczE"
-          aws ecs update-service --cluster $CLUSTER_NAME --service $SERVICE_NAME --force-new-deployment
+          aws ecs update-service --cluster ${{ secrets.ECS_CLUSTER_NAME }} --service ${{ secrets.ECS_SERVICE_NAME }} --force-new-deployment
