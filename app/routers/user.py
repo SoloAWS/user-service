@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Header, Query, Path, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
-from ..schemas.user import UserCreate, UserResponse, UserDocumentInfo, CompanyResponse
+from ..schemas.user import UserCreate, UserResponse, UserDocumentInfo, UserCompaniesResponse
 from ..models.model import User, Company, ABCallUser, company_user_association
 from ..session import get_db
 from uuid import UUID
@@ -53,37 +53,37 @@ def create_user(user_schema: UserCreate, db: Session = Depends(get_db)):
 def view_user(
     user_id: UUID = Path(..., description="Id of the user"),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    #current_user: dict = Depends(get_current_user)
 ):
-    if not current_user:
-        raise HTTPException(status_code=401, detail="Authentication required")
+    # if not current_user:
+    #     raise HTTPException(status_code=401, detail="Authentication required")
     
-    if current_user['user_type'] not in ['manager', 'company']:
-        raise HTTPException(status_code=403, detail="Not authorized to view users")
+    # if current_user['user_type'] not in ['manager', 'company']:
+    #     raise HTTPException(status_code=403, detail="Not authorized to view users")
     
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if current_user['user_type'] == 'company':
+    # if current_user['user_type'] == 'company':
 
-        association = db.query(company_user_association).filter(
-            company_user_association.c.company_id == current_user['sub'],
-            company_user_association.c.user_id == user_id
-        ).first()
-        if not association:
-            raise HTTPException(status_code=403, detail="Not authorized to view this user")
+    #     association = db.query(company_user_association).filter(
+    #         company_user_association.c.company_id == current_user['sub'],
+    #         company_user_association.c.user_id == user_id
+    #     ).first()
+    #     if not association:
+    #         raise HTTPException(status_code=403, detail="Not authorized to view this user")
 
     return user
 
-@router.post("/companies", response_model=list[CompanyResponse])
+@router.post("/companies", response_model=UserCompaniesResponse)
 def get_user_companies(
     user_doc_info: UserDocumentInfo,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    #current_user: dict = Depends(get_current_user)
 ):
-    if not current_user:
-        raise HTTPException(status_code=401, detail="Authentication required")
+    # if not current_user:
+    #     raise HTTPException(status_code=401, detail="Authentication required")
     
     user = db.query(User).filter(
         User.document_type == user_doc_info.document_type,
@@ -92,12 +92,12 @@ def get_user_companies(
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-
-    if current_user['user_type'] == 'user':
-        if str(current_user['sub']) != str(user.id):
-            raise HTTPException(status_code=403, detail="Not authorized to view this user's companies")
-    elif current_user['user_type'] == 'company':
-        raise HTTPException(status_code=403, detail="Not authorized to view user companies")
+    
+    # if current_user['user_type'] == 'user':
+    #     if str(current_user['sub']) != str(user.id):
+    #         raise HTTPException(status_code=403, detail="Not authorized to view this user's companies")
+    # elif current_user['user_type'] == 'company':
+    #     raise HTTPException(status_code=403, detail="Not authorized to view user companies")
 
     companies = db.query(Company).join(
         company_user_association,
@@ -107,4 +107,4 @@ def get_user_companies(
         )
     ).all()
 
-    return companies
+    return UserCompaniesResponse(user_id=user.id, companies=companies)

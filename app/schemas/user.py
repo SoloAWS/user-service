@@ -110,3 +110,7 @@ class ManagerResponse(BaseModel):
 class UserDocumentInfo(BaseModel):
     document_type: str
     document_id: str
+
+class UserCompaniesResponse(BaseModel):
+    user_id: UUID
+    companies: List[CompanyResponse]
