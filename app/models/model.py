@@ -17,8 +17,8 @@ class ABCallUser(Base):
     __tablename__ = "abcall_users"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4, unique=True, nullable=False)
-    username = Column(String, unique=True, nullable=False)
-    password = Column(String, nullable=False)
+    username = Column(String, unique=True)
+    password = Column(String)
     first_name = Column(String, nullable=False)
     last_name = Column(String, nullable=False)
     registration_date = Column(DateTime(timezone=True), server_default=func.now())

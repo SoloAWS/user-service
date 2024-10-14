@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Header, Query, Path, HTTPException
 from sqlalchemy.orm import Session
 from ..schemas.user import AbcallUserCreate, ManagerResponse
-from ..models.model import Manager, save_user
+from ..models.model import Manager, ABCallUser, save_user
 from ..session import get_db
 from uuid import UUID
 import jwt
@@ -23,7 +23,7 @@ def get_current_user(token: str = Header(None)):
 
 @router.post("/", response_model=ManagerResponse, status_code=201)
 def create_manager(manager: AbcallUserCreate, db: Session = Depends(get_db)):
-    existing_manager = db.query(Manager).filter(Manager.username == manager.username).first()
+    existing_manager = db.query(ABCallUser).filter(ABCallUser.username == manager.username).first()
     if existing_manager:
         raise HTTPException(status_code=400, detail="Username already registered")
     

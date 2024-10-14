@@ -2,13 +2,13 @@ from fastapi import APIRouter, Depends, Header, Query, Path, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from ..schemas.user import UserCreate, UserResponse, UserDocumentInfo, CompanyResponse
-from ..models.model import User, Company, company_user_association
+from ..models.model import User, Company, ABCallUser, company_user_association
 from ..session import get_db
 from uuid import UUID
 import jwt
 import os
 
-router = APIRouter(prefix="/user", tags=["User"])
+router = APIRouter(prefix="/user/user", tags=["User"])
 
 SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'secret_key')
 ALGORITHM = "HS256"
@@ -32,6 +32,9 @@ def create_user(user_schema: UserCreate, db: Session = Depends(get_db)):
     if not association:
         raise HTTPException(status_code=400, detail="The given user does not belong to any registered company")
 
+    if db.query(ABCallUser).filter(ABCallUser.username == user_schema.username).first():
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
     existing_user = db.query(User).filter(
         User.document_type == user_schema.document_type,
         User.document_id == user_schema.document_id

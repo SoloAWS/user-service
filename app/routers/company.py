@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Header, Query, Path, HTTPException
 from sqlalchemy.orm import Session
 from ..schemas.user import CompanyCreate, CompanyResponse
-from ..models.model import Company, save_user
+from ..models.model import Company, ABCallUser, save_user
 from ..session import get_db
 from uuid import UUID
 import jwt
@@ -23,7 +23,7 @@ def get_current_user(token: str = Header(None)):
 
 @router.post("/", response_model=CompanyResponse, status_code=201)
 def create_company(company_schema: CompanyCreate, db: Session = Depends(get_db)):
-    if db.query(Company).filter(Company.username == company_schema.username).first():
+    if db.query(ABCallUser).filter(ABCallUser.username == company_schema.username).first():
         raise HTTPException(status_code=400, detail="Email already registered")
     
     created_company = save_user(db, Company, company_schema)

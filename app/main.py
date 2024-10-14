@@ -4,15 +4,13 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 
 from .errors.errors import ApiError
-from .routers import company
-from .session import engine
-from .models.model import Base
-
-#Base.metadata.create_all(bind=engine)
+from .routers import company, user, manager
 
 app = FastAPI()
 
+app.include_router(user.router)
 app.include_router(company.router)
+app.include_router(manager.router)
 version = "1.0"
 
 
