@@ -77,6 +77,25 @@ class UserCreate(AbcallUserCreate):
     model_config = {
         "from_attributes": True
     }
+
+class UserResponse(BaseModel):
+    id: UUID
+    username: EmailStr
+    first_name: str
+    last_name: str
+    document_id: str
+    document_type: str
+    birth_date: date
+    phone_number: str
+    importance: int
+    allow_call: bool
+    allow_sms: bool
+    allow_email: bool
+    registration_date: datetime
+
+    model_config = {
+        "from_attributes": True
+    }
     
 class ManagerResponse(BaseModel):
     id: UUID
@@ -87,3 +106,7 @@ class ManagerResponse(BaseModel):
 
     class Config:
         from_attributes = True
+        
+class UserDocumentInfo(BaseModel):
+    document_type: str
+    document_id: str

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Header, Query, Path, HTTPException
 from sqlalchemy.orm import Session
-from ..schemas.user import UserCreate, UserResponse
+from sqlalchemy import and_
+from ..schemas.user import UserCreate, UserResponse, UserDocumentInfo, CompanyResponse
 from ..models.model import User, Company, company_user_association
 from ..session import get_db
 from uuid import UUID
@@ -71,3 +72,36 @@ def view_user(
             raise HTTPException(status_code=403, detail="Not authorized to view this user")
 
     return user
+
+@router.post("/companies", response_model=list[CompanyResponse])
+def get_user_companies(
+    user_doc_info: UserDocumentInfo,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
+    user = db.query(User).filter(
+        User.document_type == user_doc_info.document_type,
+        User.document_id == user_doc_info.document_id
+    ).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if current_user['user_type'] == 'user':
+        if str(current_user['sub']) != str(user.id):
+            raise HTTPException(status_code=403, detail="Not authorized to view this user's companies")
+    elif current_user['user_type'] == 'company':
+        raise HTTPException(status_code=403, detail="Not authorized to view user companies")
+
+    companies = db.query(Company).join(
+        company_user_association,
+        and_(
+            company_user_association.c.company_id == Company.id,
+            company_user_association.c.user_id == user.id
+        )
+    ).all()
+
+    return companies
