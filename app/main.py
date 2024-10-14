@@ -8,7 +8,7 @@ from .routers import company
 from .session import engine
 from .models.model import Base
 
-Base.metadata.create_all(bind=engine)
+#Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
