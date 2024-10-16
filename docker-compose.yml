@@ -13,7 +13,7 @@ services:
   user-service:
     build: .
     environment:
-      DB_USER: postgres
+      DB_USERNAME: postgres
       DB_PASSWORD: postgres
       DB_HOST: postgres
       DB_PORT: 5432

@@ -13,7 +13,8 @@ class SessionConfig():
             db_host = os.environ['DB_HOST']
             db_name = os.environ['DB_NAME']
             return f'postgresql://{db_user}:{db_pass}@{db_host}:5432/{db_name}'
-        except KeyError:
+        except KeyError as k:
+            print(f'No database environment variables found, using SQLite as fallback ({k})')
             return 'sqlite:///./test.db'
 
 session_config = SessionConfig()
