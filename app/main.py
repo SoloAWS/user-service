@@ -5,6 +5,7 @@ from fastapi.exceptions import RequestValidationError
 
 from .errors.errors import ApiError
 from .routers import company, user, manager
+from .session import engine
 
 app = FastAPI()
 
@@ -13,6 +14,9 @@ app.include_router(company.router)
 app.include_router(manager.router)
 version = "1.0"
 
+from .models.model import Base
+
+Base.metadata.create_all(bind=engine)
 
 @app.get("/user/health")
 async def health():
