@@ -114,3 +114,6 @@ class UserDocumentInfo(BaseModel):
 class UserCompaniesResponse(BaseModel):
     user_id: UUID
     companies: List[CompanyResponse]
+    
+class UserIdRequest(BaseModel):
+    id: UUID
