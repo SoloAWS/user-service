@@ -31,9 +31,11 @@ def create_manager(manager: AbcallUserCreate, db: Session = Depends(get_db)):
     return created_manager
 
 @router.get("/{manager_id}", response_model=ManagerResponse)
-def get_manager(manager_id: UUID = Path(...), db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
-    if current_user['user_type'] != 'manager':
-        raise HTTPException(status_code=403, detail="Not authorized to view manager details")
+def get_manager(manager_id: UUID = Path(...), db: Session = Depends(get_db), 
+                #current_user: dict = Depends(get_current_user)
+                ):
+    #if current_user['user_type'] != 'manager':
+    #    raise HTTPException(status_code=403, detail="Not authorized to view manager details")
 
     manager = db.query(Manager).filter(Manager.id == manager_id).first()
     if not manager:
