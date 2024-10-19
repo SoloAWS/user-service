@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, Header, Query, Path, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
-from ..schemas.user import UserCreate, UserResponse, UserDocumentInfo, UserCompaniesResponse
+from ..schemas.user import UserCreate, UserResponse, UserDocumentInfo, UserCompaniesResponse, UserIdRequest
 from ..models.model import User, Company, ABCallUser, company_user_association
 from ..session import get_db
 from uuid import UUID
@@ -99,6 +99,38 @@ def get_user_companies(
             raise HTTPException(status_code=403, detail="Not authorized to view this user's companies")
     elif current_user['user_type'] == 'company':
         raise HTTPException(status_code=403, detail="Not authorized to view user companies")
+
+    companies = db.query(Company).join(
+        company_user_association,
+        and_(
+            company_user_association.c.company_id == Company.id,
+            company_user_association.c.user_id == user.id
+        )
+    ).all()
+
+    return UserCompaniesResponse(user_id=user.id, companies=companies)
+
+@router.post("/companies-user", response_model=UserCompaniesResponse)
+def get_user_companies(
+    user_doc_info: UserIdRequest,
+    db: Session = Depends(get_db),
+    #current_user: dict = Depends(get_current_user)
+):
+    #if not current_user:
+     #   raise HTTPException(status_code=401, detail="Authentication required")
+    
+    user = db.query(User).filter(
+        User.id == user_doc_info.id,
+    ).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    #if current_user['user_type'] == 'user':
+     #   if str(current_user['sub']) != str(user.id):
+      #      raise HTTPException(status_code=403, detail="Not authorized to view this user's companies")
+    #elif current_user['user_type'] == 'company':
+     #   raise HTTPException(status_code=403, detail="Not authorized to view user companies")
 
     companies = db.query(Company).join(
         company_user_association,
