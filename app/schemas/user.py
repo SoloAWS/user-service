@@ -119,5 +119,5 @@ class UserIdRequest(BaseModel):
     id: UUID
 
 class UserPlanRequest(BaseModel):
-    user_id: int
-    plan_id: int
+    user_id: UUID
+    plan_id: UUID
