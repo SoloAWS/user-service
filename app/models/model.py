@@ -60,6 +60,7 @@ class User(ABCallUser):
     allow_call = Column(Boolean, default=True)
     allow_sms = Column(Boolean, default=True)
     allow_email = Column(Boolean, default=True)
+    plan_id = Column(UUID(as_uuid=True), nullable=True)
 
     companies = relationship("Company", secondary=company_user_association, back_populates="users")
 

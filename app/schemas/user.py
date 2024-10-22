@@ -117,3 +117,7 @@ class UserCompaniesResponse(BaseModel):
     
 class UserIdRequest(BaseModel):
     id: UUID
+
+class UserPlanRequest(BaseModel):
+    user_id: int
+    plan_id: int
