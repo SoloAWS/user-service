@@ -122,3 +122,55 @@ def test_view_nonexistent_company(client, db_session):
     response = client.get(f"/user/company/{nonexistent_id}", headers={"token": token})
     assert response.status_code == 404
     assert response.json()["detail"] == "Company not found"
+    
+def test_assign_plan_success(client):
+    company_data = {
+        "username": "view@example.com",
+        "password": "testpassword",
+        "first_name": "Jane",
+        "last_name": "Doe",
+        "name": "View Company",
+        "birth_date": "1990-01-01",
+        "phone_number": "1234567890",
+        "country": "TestCountry",
+        "city": "TestCity"
+    }
+    response = client.post("/user/company/", json=company_data)
+    company_id = response.json()["id"]
+    
+    #Create a JWT token for a different company
+    token_data = {
+        "sub": str(company_id),
+        "user_type": "company"
+    }
+    token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
+    
+    response = client.post("/user/company/assign-plan", json={"company_id": company_id, "plan_id": str(uuid4())}, headers={"token": token})
+    assert response.status_code == 200
+    assert response.json() == {"message": "Plan assigned successfully"}
+
+def test_assign_plan_invalid_user(client):
+    company_data = {
+        "username": "view@example.com",
+        "password": "testpassword",
+        "first_name": "Jane",
+        "last_name": "Doe",
+        "name": "View Company",
+        "birth_date": "1990-01-01",
+        "phone_number": "1234567890",
+        "country": "TestCountry",
+        "city": "TestCity"
+    }
+    response = client.post("/user/company/", json=company_data)
+    company_id = response.json()["id"]
+    
+    #Create a JWT token for a different company
+    token_data = {
+        "sub": str(company_id),
+        "user_type": "company"
+    }
+    token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
+    response = client.post("/user/company/assign-plan", json={"company_id": str(uuid4()), "plan_id": str(uuid4())}, headers={"token": token})
+    
+    assert response.json()["detail"] == "Company not found"
+    assert response.status_code == 404

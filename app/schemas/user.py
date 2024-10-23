@@ -49,6 +49,9 @@ class CompanyResponse(BaseModel):
         "from_attributes": True
     }
     
+class CompanyPlanRequest(BaseModel):
+    company_id: UUID
+    plan_id: UUID
 
 class UserCreate(AbcallUserCreate):    
     document_id: str
