@@ -208,19 +208,3 @@ def test_get_user_companies_user_not_found(client, db_session):
 #     response = client.post("/user/user/companies", json=user_doc_info.dict(), headers={"token": token})
 #     assert response.status_code == 403
 #     assert response.json()["detail"] == "Not authorized to view user companies"
-
-def test_assign_plan_success(client, db_session):
-    user = create_user(db_session)
-    token = create_token(user.id, "user")
-    
-    response = client.post("/user/user/assign-plan", json={"user_id": str(user.id), "plan_id": str(uuid4())}, headers={"token": token})
-    assert response.status_code == 200
-    assert response.json() == {"message": "Plan assigned successfully"}
-
-def test_assign_plan_invalid_user(client, db_session):   
-    user = create_user(db_session)
-    token = create_token(user.id, "user")
-    response = client.post("/user/user/assign-plan", json={"user_id": str(uuid4()), "plan_id": str(uuid4())}, headers={"token": token})
-    
-    assert response.json()["detail"] == "User not found"
-    assert response.status_code == 404

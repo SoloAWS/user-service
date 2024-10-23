@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, Header, Query, Path, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
-from ..schemas.user import UserCreate, UserResponse, UserDocumentInfo, UserCompaniesResponse, UserIdRequest, UserPlanRequest
+from ..schemas.user import UserCreate, UserResponse, UserDocumentInfo, UserCompaniesResponse, UserIdRequest
 from ..models.model import User, Company, ABCallUser, company_user_association
 from ..session import get_db
 from uuid import UUID
@@ -141,24 +141,3 @@ def get_user_companies(
     ).all()
 
     return UserCompaniesResponse(user_id=user.id, companies=companies)
-
-@router.post("/assign-plan", response_model=dict, status_code=200)
-def assign_plan_to_user(
-    user_plan_info: UserPlanRequest,
-    db: Session = Depends(get_db),
-    #current_user: dict = Depends(get_current_user)
-):
-    #if not current_user and current_user['sub'] != user_plan_info.user_id:
-     #   raise HTTPException(status_code=401, detail="Authentication required")
-    
-    user = db.query(User).filter(
-        User.id == user_plan_info.user_id,
-    ).first()
-
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    user.plan_id = user_plan_info.plan_id
-    db.commit()
-
-    return {"message": "Plan assigned successfully"}

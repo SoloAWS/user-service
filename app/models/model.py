@@ -41,6 +41,7 @@ class Company(ABCallUser):
     phone_number = Column(String, nullable=False)
     country = Column(String, nullable=False)
     city = Column(String, nullable=False)
+    plan_id = Column(UUID(as_uuid=True), nullable=True)
 
     users = relationship("User", secondary=company_user_association, back_populates="companies")
 
@@ -60,7 +61,6 @@ class User(ABCallUser):
     allow_call = Column(Boolean, default=True)
     allow_sms = Column(Boolean, default=True)
     allow_email = Column(Boolean, default=True)
-    plan_id = Column(UUID(as_uuid=True), nullable=True)
 
     companies = relationship("Company", secondary=company_user_association, back_populates="users")
 

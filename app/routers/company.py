@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, Header, Query, Path, HTTPException
+from fastapi import APIRouter, Depends, Header, Path, HTTPException
 from sqlalchemy.orm import Session
-from ..schemas.user import CompanyCreate, CompanyResponse
+from ..schemas.user import CompanyCreate, CompanyResponse, CompanyPlanRequest
 from ..models.model import Company, ABCallUser, save_user
 from ..session import get_db
 from uuid import UUID
@@ -48,3 +48,25 @@ def view_company(
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
     return company
+
+
+@router.post("/assign-plan", response_model=dict, status_code=200)
+def assign_plan_to_user(
+    company_plan_info: CompanyPlanRequest,
+    db: Session = Depends(get_db),
+    #current_user: dict = Depends(get_current_user)
+):
+    #if not current_user and current_user['sub'] != company_plan_info.company_id:
+     #   raise HTTPException(status_code=401, detail="Authentication required")
+    
+    company = db.query(Company).filter(
+        Company.id == company_plan_info.company_id,
+    ).first()
+
+    if not company:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    company.plan_id = company_plan_info.plan_id
+    db.commit()
+
+    return {"message": "Plan assigned successfully"}
