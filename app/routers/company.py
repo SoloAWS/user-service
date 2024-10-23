@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Header, Path, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-from ..schemas.user import CompanyCreate, CompanyIDRequest, CompanyResponse, CompanyPlanRequest
+from ..schemas.user import CompanyCreate, CompanyIdsRequest, CompanyResponse, CompanyPlanRequest
 from ..models.model import Company, ABCallUser, save_user
 from ..session import get_db
 from uuid import UUID
@@ -75,7 +75,7 @@ def assign_plan_to_user(
 
 @router.post("/get-by-id", response_model=List[dict], status_code=200)
 def get_companies(
-    company_ids_request: List[CompanyIDRequest],
+    company_ids_request: CompanyIdsRequest,
     db: Session = Depends(get_db),
     #current_user: dict = Depends(get_current_user)
 ):
@@ -86,16 +86,7 @@ def get_companies(
     #if current_user['user_type'] != 'manager':
     #    raise HTTPException(status_code=403, detail="Not authorized to view companies")
     
-    company_ids = [request.company_id for request in company_ids_request]
-    
-    # Validate input
-    if not company_ids:
-        raise HTTPException(
-            status_code=400,
-            detail="At least one company ID must be provided"
-        )
-    
-    companies = db.query(Company).filter(Company.id.in_(company_ids)).all()
+    companies = db.query(Company).filter(Company.id.in_(company_ids_request.company_ids)).all()
     
     if not companies:
         raise HTTPException(status_code=404, detail="No companies found")
@@ -104,8 +95,8 @@ def get_companies(
                   for company in companies}
     
     ordered_results = []
-    for request in company_ids_request:
-        company_data = company_map.get(str(request.company_id))
+    for company_id in company_ids_request.company_ids:
+        company_data = company_map.get(str(company_id))
         if company_data:
             ordered_results.append(company_data)
     

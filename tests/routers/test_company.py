@@ -206,8 +206,7 @@ def test_get_companies_success(client, db_session):
     company1 = create_company(db_session, username="company1@example.com", name="Company One")
     company2 = create_company(db_session, username="company2@example.com", name="Company Two")
     
-    response = client.post("/user/company/get-by-id", json=[{"company_id": str(company1.id)}, {"company_id": str(company2.id)}])
-    print(response.json())
+    response = client.post("/user/company/get-by-id", json={"company_ids": [str(company1.id), str(company2.id)]})
     assert response.status_code == 200
     assert response.json() == [
         {"company_id": str(company1.id), "name": company1.name},
@@ -218,6 +217,6 @@ def test_get_companies_invalid_ids(client):
     invalid_id1 = uuid4()
     invalid_id2 = uuid4()
     
-    response = client.post("/user/company/get-by-id", json=[{"company_id": str(invalid_id1)}, {"company_id": str(invalid_id2)}])
+    response = client.post("/user/company/get-by-id", json={"company_ids": [str(invalid_id1), str(invalid_id2)]})
     assert response.status_code == 404
     assert response.json()["detail"] == "No companies found"
