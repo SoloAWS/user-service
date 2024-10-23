@@ -172,5 +172,5 @@ def test_assign_plan_invalid_user(client):
     token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
     response = client.post("/user/company/assign-plan", json={"company_id": str(uuid4()), "plan_id": str(uuid4())}, headers={"token": token})
     
-    assert response.json()["detail"] == "User not found"
+    assert response.json()["detail"] == "Company not found"
     assert response.status_code == 404

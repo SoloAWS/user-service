@@ -64,7 +64,7 @@ def assign_plan_to_user(
     ).first()
 
     if not company:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="Company not found")
 
     company.plan_id = company_plan_info.plan_id
     db.commit()
