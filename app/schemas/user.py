@@ -50,7 +50,7 @@ class CompanyResponse(BaseModel):
     }
 
 class CompanyIdsRequest(BaseModel):
-    company_ids: List[UUID]
+    company_ids: List[str]
     
 class CompanyPlanRequest(BaseModel):
     company_id: UUID

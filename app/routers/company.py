@@ -85,8 +85,21 @@ def get_companies(
      
     #if current_user['user_type'] != 'manager':
     #    raise HTTPException(status_code=403, detail="Not authorized to view companies")
+    if not company_ids_request.company_ids:
+        raise HTTPException(
+            status_code=400,
+            detail="At least one company ID must be provided"
+        )
     
-    companies = db.query(Company).filter(Company.id.in_(company_ids_request.company_ids)).all()
+    try:
+        company_ids = [UUID(id_str) for id_str in company_ids_request.company_ids]
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid UUID format in company_ids"
+        )
+    
+    companies = db.query(Company).filter(Company.id.in_(company_ids)).all()
     
     if not companies:
         raise HTTPException(status_code=404, detail="No companies found")
@@ -96,7 +109,7 @@ def get_companies(
     
     ordered_results = []
     for company_id in company_ids_request.company_ids:
-        company_data = company_map.get(str(company_id))
+        company_data = company_map.get(company_id)
         if company_data:
             ordered_results.append(company_data)
     
