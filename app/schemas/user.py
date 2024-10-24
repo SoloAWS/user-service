@@ -48,6 +48,9 @@ class CompanyResponse(BaseModel):
     model_config = {
         "from_attributes": True
     }
+
+class CompanyIdsRequest(BaseModel):
+    company_ids: List[str]
     
 class CompanyPlanRequest(BaseModel):
     company_id: UUID
