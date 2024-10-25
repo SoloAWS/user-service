@@ -41,6 +41,7 @@ class Company(ABCallUser):
     phone_number = Column(String, nullable=False)
     country = Column(String, nullable=False)
     city = Column(String, nullable=False)
+    plan_id = Column(UUID(as_uuid=True), nullable=True)
 
     users = relationship("User", secondary=company_user_association, back_populates="companies")
 
