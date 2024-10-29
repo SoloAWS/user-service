@@ -34,16 +34,16 @@ def create_company(company_schema: CompanyCreate, db: Session = Depends(get_db))
 def view_company(
     company_id: UUID = Path(..., description="Id of the company"),
     db: Session = Depends(get_db),
-    #current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user)
 ):
-    #if not current_user:
-    #    raise HTTPException(status_code=401, detail="Authentication required")
+    if not current_user:
+       raise HTTPException(status_code=401, detail="Authentication required")
     
-    #if current_user['user_type'] not in ['manager', 'company']:
-    #    raise HTTPException(status_code=403, detail="Not authorized to view companies")
+    if current_user['user_type'] not in ['manager', 'company']:
+       raise HTTPException(status_code=403, detail="Not authorized to view companies")
     
-    #if current_user['user_type'] == 'company' and str(current_user['sub']) != str(company_id):
-    #    raise HTTPException(status_code=403, detail="Not authorized to view this company")
+    if current_user['user_type'] == 'company' and str(current_user['sub']) != str(company_id):
+       raise HTTPException(status_code=403, detail="Not authorized to view this company")
     
     company = db.query(Company).filter(Company.id == company_id).first()
     if not company:
@@ -55,10 +55,10 @@ def view_company(
 def assign_plan_to_user(
     company_plan_info: CompanyPlanRequest,
     db: Session = Depends(get_db),
-    #current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user)
 ):
-    #if not current_user and current_user['sub'] != company_plan_info.company_id:
-     #   raise HTTPException(status_code=401, detail="Authentication required")
+    if not current_user and current_user['sub'] != company_plan_info.company_id:
+       raise HTTPException(status_code=401, detail="Authentication required")
     
     company = db.query(Company).filter(
         Company.id == company_plan_info.company_id,
@@ -77,14 +77,14 @@ def assign_plan_to_user(
 def get_companies(
     company_ids_request: CompanyIdsRequest,
     db: Session = Depends(get_db),
-    #current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user)
 ):
     
-    #if not current_user:
-     #   raise HTTPException(status_code=401, detail="Authentication required")
+    if not current_user:
+       raise HTTPException(status_code=401, detail="Authentication required")
      
-    #if current_user['user_type'] != 'manager':
-    #    raise HTTPException(status_code=403, detail="Not authorized to view companies")
+    if current_user['user_type'] != 'manager':
+       raise HTTPException(status_code=403, detail="Not authorized to view companies")
     if not company_ids_request.company_ids:
         raise HTTPException(
             status_code=400,
