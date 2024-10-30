@@ -3,9 +3,11 @@ from fastapi import APIRouter, Depends, Header, Query, Path, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from ..schemas.user import UserCreate, UserResponse, UserDocumentInfo, UserCompaniesResponse, UserIdRequest
+from ..schemas.user import UserCredentials, UserValidationResponse
 from ..models.model import User, Company, ABCallUser, company_user_association
 from ..session import get_db
 from uuid import UUID
+from passlib.hash import bcrypt
 import jwt
 import os
 
@@ -141,3 +143,28 @@ def get_user_companies(
     ).all()
 
     return UserCompaniesResponse(user_id=user.id, companies=companies)
+
+@router.post("/validate-credentials", response_model=UserValidationResponse)
+async def validate_credentials(
+    credentials: UserCredentials,
+    db: Session = Depends(get_db)
+):
+    user = db.query(ABCallUser).filter(
+        ABCallUser.username == credentials.username
+    ).first()
+    
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    if not bcrypt.verify(credentials.password, user.password):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    user_type = user.type
+    
+    return UserValidationResponse(
+        id=user.id,
+        username=user.username,
+        user_type=user_type,
+        first_name=user.first_name,
+        last_name=user.last_name
+    )

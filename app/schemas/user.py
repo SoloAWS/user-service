@@ -123,3 +123,18 @@ class UserCompaniesResponse(BaseModel):
     
 class UserIdRequest(BaseModel):
     id: UUID
+    
+class UserCredentials(BaseModel):
+    username: EmailStr
+    password: str
+
+class UserValidationResponse(BaseModel):
+    id: UUID
+    username: EmailStr
+    user_type: str
+    first_name: str
+    last_name: str
+
+    model_config = {
+        "from_attributes": True
+    }
