@@ -44,6 +44,7 @@ class CompanyResponse(BaseModel):
     country: str
     city: str
     registration_date: datetime
+    plan_id: Optional[UUID]
 
     model_config = {
         "from_attributes": True
