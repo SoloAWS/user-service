@@ -1,8 +1,9 @@
 from sqlalchemy import Column, String, Boolean, Integer, DateTime, ForeignKey, Date, Table
-from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy.orm import declarative_base, relationship, validates
 from sqlalchemy.sql import func
 from uuid import uuid4
 from sqlalchemy.dialects.postgresql import UUID
+from passlib.hash import bcrypt
 
 Base = declarative_base()
 
@@ -29,6 +30,12 @@ class ABCallUser(Base):
         "polymorphic_identity": "abcall_user",
         "polymorphic_on": type
     }
+    
+    @validates('password')
+    def validate_password(self, key, password):
+        if password and not password.startswith('$2b$'):
+            return bcrypt.hash(password)
+        return password
 
 class Company(ABCallUser):
     __tablename__ = "companies"

@@ -4,6 +4,7 @@ from uuid import uuid4, UUID
 import jwt
 import os
 from datetime import date
+from passlib.hash import bcrypt
 
 from app.models.model import User, Company, company_user_association, Manager
 from app.schemas.user import UserDocumentInfo
@@ -116,11 +117,11 @@ def test_create_user_duplicate_email(client, db_session):
     assert response.status_code == 400
     assert response.json()["detail"] == "Email already registered"
 
-# def test_view_user_unauthorized(client, db_session):
-#     user_id = uuid4()
-#     response = client.get(f"/user/user/{user_id}")
-#     assert response.status_code == 401
-#     assert response.json()["detail"] == "Authentication required"
+def test_view_user_unauthorized(client, db_session):
+    user_id = uuid4()
+    response = client.get(f"/user/user/{user_id}")
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Authentication required"
 
 def test_get_user_companies(client, db_session):
     company_1 = create_company(db_session, username="company1@example.com", name="Company One")
@@ -152,7 +153,7 @@ def test_get_user_companies(client, db_session):
     
     token = create_token(user.id, "user")
 
-    response = client.post("/user/user/companies", json=user_doc_info.dict(), headers={"token": token})
+    response = client.post("/user/user/companies", json=user_doc_info.dict(), headers={"authorization": token})
     assert response.status_code == 200
     data = response.json()
     assert data["user_id"] == str(user.id)
@@ -164,7 +165,7 @@ def test_get_user_companies_no_companies(client, db_session):
     token = create_token(user.id, "user")
     user_doc_info = UserDocumentInfo(document_type=user.document_type, document_id=user.document_id)
     
-    response = client.post("/user/user/companies", json=user_doc_info.dict(), headers={"token": token})
+    response = client.post("/user/user/companies", json=user_doc_info.dict(), headers={"authorization": token})
     assert response.status_code == 200
     data = response.json()
     assert data["user_id"] == str(user.id)
@@ -175,36 +176,60 @@ def test_get_user_companies_user_not_found(client, db_session):
     token = create_token(user.id, "user")
     user_doc_info = UserDocumentInfo(document_type="passport", document_id="NONEXISTENT")
     
-    response = client.post("/user/user/companies", json=user_doc_info.dict(), headers={"token": token})
+    response = client.post("/user/user/companies", json=user_doc_info.dict(), headers={"authorization": token})
     assert response.status_code == 404
     assert response.json()["detail"] == "User not found"
 
-# def test_get_user_companies_unauthorized(client, db_session):
-#     user = create_user(db_session)
-#     user_doc_info = UserDocumentInfo(document_type=user.document_type, document_id=user.document_id)
+def test_get_user_companies_unauthorized(client, db_session):
+    user = create_user(db_session)
+    user_doc_info = UserDocumentInfo(document_type=user.document_type, document_id=user.document_id)
     
-#     response = client.post("/user/user/companies", json=user_doc_info.dict())
-#     assert response.status_code == 401
-#     assert response.json()["detail"] == "Authentication required"
+    response = client.post("/user/user/companies", json=user_doc_info.dict())
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Authentication required"
 
-# def test_get_user_companies_wrong_user(client, db_session):
-#     user1 = create_user(db_session, first_name="User", last_name="One", document_type="passport", document_id="KL123456")
-#     user2 = create_user(db_session, first_name="User", last_name="Two", document_type="passport", document_id="MN789012")
+def test_get_user_companies_wrong_user(client, db_session):
+    user1 = create_user(db_session, first_name="User", last_name="One", document_type="passport", document_id="KL123456")
+    user2 = create_user(db_session, first_name="User", last_name="Two", document_type="passport", document_id="MN789012")
     
-#     token = create_token(user2.id, "user")
-#     user_doc_info = UserDocumentInfo(document_type=user1.document_type, document_id=user1.document_id)
+    token = create_token(user2.id, "user")
+    user_doc_info = UserDocumentInfo(document_type=user1.document_type, document_id=user1.document_id)
     
-#     response = client.post("/user/user/companies", json=user_doc_info.dict(), headers={"token": token})
-#     assert response.status_code == 403
-#     assert response.json()["detail"] == "Not authorized to view this user's companies"
+    response = client.post("/user/user/companies", json=user_doc_info.dict(), headers={"authorization": token})
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Not authorized to view this user's companies"
 
-# def test_get_user_companies_company_user(client, db_session):
-#     user = create_user(db_session)
-#     company = create_company(db_session)
+def test_get_user_companies_company_user(client, db_session):
+    user = create_user(db_session)
+    company = create_company(db_session)
     
-#     token = create_token(company.id, "company")
-#     user_doc_info = UserDocumentInfo(document_type=user.document_type, document_id=user.document_id)
+    token = create_token(company.id, "company")
+    user_doc_info = UserDocumentInfo(document_type=user.document_type, document_id=user.document_id)
     
-#     response = client.post("/user/user/companies", json=user_doc_info.dict(), headers={"token": token})
-#     assert response.status_code == 403
-#     assert response.json()["detail"] == "Not authorized to view user companies"
+    response = client.post("/user/user/companies", json=user_doc_info.dict(), headers={"authorization": token})
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Not authorized to view user companies"
+
+def test_validate_credentials_invalid_username(client, db_session):
+    credentials = {
+        "username": "invaliduser@example.com",
+        "password": "somepassword"
+    }
+    
+    response = client.post("/user/user/validate-credentials", json=credentials)
+    
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid credentials"
+
+def test_validate_credentials_invalid_password(client, db_session):
+    user = create_user(db_session, username="validuser@example.com", password=bcrypt.hash("validpassword"))
+    
+    credentials = {
+        "username": "validuser@example.com",
+        "password": "invalidpassword"
+    }
+    
+    response = client.post("/user/user/validate-credentials", json=credentials)
+    
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid credentials"
