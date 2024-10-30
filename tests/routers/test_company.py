@@ -97,7 +97,7 @@ def test_view_company(client, db_session):
     token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
 
     # Test viewing the company
-    response = client.get(f"/user/company/{company_id}", headers={"token": token})
+    response = client.get(f"/user/company/{company_id}", headers={"authorization": token})
     assert response.status_code == 200
     data = response.json()
     assert data["username"] == company_data["username"]
@@ -133,7 +133,7 @@ def test_view_company_wrong_user(client, db_session):
     token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
 
     # Test viewing the company with wrong user
-    response = client.get(f"/user/company/{company_id}", headers={"token": token})
+    response = client.get(f"/user/company/{company_id}", headers={"authorization": token})
     assert response.status_code == 403
     assert response.json()["detail"] == "Not authorized to view this company"
 
@@ -145,7 +145,7 @@ def test_view_nonexistent_company(client, db_session):
     }
     token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
 
-    response = client.get(f"/user/company/{nonexistent_id}", headers={"token": token})
+    response = client.get(f"/user/company/{nonexistent_id}", headers={"authorization": token})
     assert response.status_code == 404
     assert response.json()["detail"] == "Company not found"
     
@@ -171,7 +171,7 @@ def test_assign_plan_success(client):
     }
     token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
     
-    response = client.post("/user/company/assign-plan", json={"company_id": company_id, "plan_id": str(uuid4())}, headers={"token": token})
+    response = client.post("/user/company/assign-plan", json={"company_id": company_id, "plan_id": str(uuid4())}, headers={"authorization": token})
     assert response.status_code == 200
     assert response.json() == {"message": "Plan assigned successfully"}
 
@@ -196,7 +196,7 @@ def test_assign_plan_invalid_user(client):
         "user_type": "company"
     }
     token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
-    response = client.post("/user/company/assign-plan", json={"company_id": str(uuid4()), "plan_id": str(uuid4())}, headers={"token": token})
+    response = client.post("/user/company/assign-plan", json={"company_id": str(uuid4()), "plan_id": str(uuid4())}, headers={"authorization": token})
     
     assert response.json()["detail"] == "Company not found"
     assert response.status_code == 404
@@ -206,7 +206,7 @@ def test_get_companies_success(client, db_session):
     company1 = create_company(db_session, username="company1@example.com", name="Company One")
     company2 = create_company(db_session, username="company2@example.com", name="Company Two")
     
-    response = client.post("/user/company/get-by-id", json={"company_ids": [str(company1.id), str(company2.id)]}, headers={"token": create_token(company1.id, "manager")})
+    response = client.post("/user/company/get-by-id", json={"company_ids": [str(company1.id), str(company2.id)]}, headers={"authorization": create_token(company1.id, "manager")})
     assert response.status_code == 200
     assert response.json() == [
         {"company_id": str(company1.id), "name": company1.name},
@@ -217,6 +217,6 @@ def test_get_companies_invalid_ids(client):
     invalid_id1 = uuid4()
     invalid_id2 = uuid4()
     
-    response = client.post("/user/company/get-by-id", json={"company_ids": [str(invalid_id1), str(invalid_id2)]}, headers={"token": create_token(uuid4(), "manager")})
+    response = client.post("/user/company/get-by-id", json={"company_ids": [str(invalid_id1), str(invalid_id2)]}, headers={"authorization": create_token(uuid4(), "manager")})
     assert response.status_code == 404
     assert response.json()["detail"] == "No companies found"
